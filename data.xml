@@ -1,0 +1,92 @@
+<?xml version="1.0"?>
+<rtde_config>
+	<recipe key="outs">
+    <field name="output_bit_register_64" type="BOOL"/>
+    <field name="output_bit_register_65" type="BOOL"/>
+    <field name="output_bit_register_66" type="BOOL"/>
+    <field name="output_bit_register_67" type="BOOL"/>
+
+    <field name="output_int_register_24" type="INT32"/>
+    <field name="output_int_register_25" type="INT32"/>
+    <field name="output_int_register_26" type="INT32"/>
+    <field name="output_int_register_27" type="INT32"/>
+
+    <field name="output_double_register_24" type="DOUBLE"/>
+    <field name="output_double_register_25" type="DOUBLE"/>
+    <field name="output_double_register_26" type="DOUBLE"/>
+    <field name="output_double_register_27" type="DOUBLE"/>
+
+
+  </recipe>
+
+  <recipe key="ins">
+    <!--
+    Button:
+          - 64: Dpad-X-up         
+          - 65: Dpad-X-down       
+          - 66: Dpad-y-up         
+          - 67: Dpad-y-down       
+          - 68: Button 0 (RX-up)  
+          - 69: Button 1 (Ry-up)  
+          - 70: Button 2 (Ry-down)
+          - 71: Button 3 (Rx-up)  
+          - 72: Button 4 (Z-up)   
+          - 73: Button 5 (Rz-up)  
+          - 74: Button 6 (Z-down) 
+          - 75: Button 7 (Rz-down)
+    -->
+    <field name="input_bit_register_64" type="BOOL"/> 
+		<field name="input_bit_register_65" type="BOOL"/> 
+		<field name="input_bit_register_66" type="BOOL"/> 
+    <field name="input_bit_register_67" type="BOOL"/> 
+    <field name="input_bit_register_68" type="BOOL"/> 
+    <field name="input_bit_register_69" type="BOOL"/> 
+    <field name="input_bit_register_70" type="BOOL"/> 
+    <field name="input_bit_register_71" type="BOOL"/> 
+    <field name="input_bit_register_72" type="BOOL"/> 
+    <field name="input_bit_register_73" type="BOOL"/> 
+    <field name="input_bit_register_74" type="BOOL"/> 
+    <field name="input_bit_register_75" type="BOOL"/> 
+    <!--
+      Input value explain:
+          - 0: Not detect
+          - 1: Cylinder - Assembly
+          - 2: Cylinder - Good 
+          - 3: Cylinder - NG
+          - 4: Retangle - Good
+          - 5: Retangle - NG 
+          - 6: Square
+    -->
+    <field name="input_int_register_24" type="INT32"/>
+    <!-- 
+		
+    <field name="input_int_register_25" type="INT32"/>
+		<field name="input_int_register_26" type="INT32"/>
+    <field name="input_int_register_27" type="INT32"/>
+    <field name="input_int_register_28" type="INT32"/>
+    <field name="input_int_register_29" type="INT32"/>
+    <field name="input_int_register_30" type="INT32"/>
+
+    -->
+    <!--
+    Analog:
+            - 24: Analog axis 1 up  
+            - 25: Analog axis 1 down
+            - 26: Analog axis 2 up  
+            - 27: Analog axis 2 down
+            - 28: Analog axis 3 up  
+            - 29: Analog axis 3 down
+            - 30: Analog axis 4 up  
+            - 31: Analog axis 4 down
+    -->
+    <field name="input_double_register_24" type="DOUBLE"/> 
+		<field name="input_double_register_25" type="DOUBLE"/>  
+		<field name="input_double_register_26" type="DOUBLE"/> 
+    <field name="input_double_register_27" type="DOUBLE"/> 
+    <field name="input_double_register_28" type="DOUBLE"/> 
+    <field name="input_double_register_29" type="DOUBLE"/>  
+    <field name="input_double_register_30" type="DOUBLE"/> 
+    <field name="input_double_register_31" type="DOUBLE"/> 
+	</recipe>
+
+</rtde_config>
