@@ -27,7 +27,9 @@ class RTDE_ed:
         # Setup recipes
         self.con.send_output_setup(self.out_names, self.out_types)
         self.inputs = self.con.send_input_setup(self.in_names, self.in_types)
-        self.watchdog = con.send_input_setup(self.watchdog_names, self.watchdog_types)
+        self.watchdog = self.con.send_input_setup(
+            self.watchdog_name, self.watchdog_type
+        )
         # Initial input value
         self.init_rtde_parameters()
         print("[INFO]: Done! Now you can use RTDE to exchange data with robot")
