@@ -7,6 +7,7 @@ bool_data = []
 button_data = []
 hat_data = []
 double_data = []
+# rb = exchange_data.RTDE_ed(robot_ip="172.17.0.2")
 rb = exchange_data.RTDE_ed()
 # Khởi tạo pygame
 pygame.init()

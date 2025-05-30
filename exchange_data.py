@@ -16,6 +16,7 @@ class RTDE_ed:
         conf = rtde_config.ConfigFile(config_filename)
         self.out_names, self.out_types = conf.get_recipe("outs")
         self.in_names, self.in_types = conf.get_recipe("ins")
+        self.watchdog_name, self.watchdog_type = conf.get_recipe("watchdog")
 
         # Connect to robot
         self.con = rtde.RTDE(ROBOT_HOST, ROBOT_PORT)
@@ -26,7 +27,7 @@ class RTDE_ed:
         # Setup recipes
         self.con.send_output_setup(self.out_names, self.out_types)
         self.inputs = self.con.send_input_setup(self.in_names, self.in_types)
-
+        self.watchdog = con.send_input_setup(self.watchdog_names, self.watchdog_types)
         # Initial input value
         self.init_rtde_parameters()
         print("[INFO]: Done! Now you can use RTDE to exchange data with robot")
@@ -50,7 +51,8 @@ class RTDE_ed:
         - 72: Button 4
         - 73: Button 5
         - 74: Button 6
-        - 75: Button 7"""
+        - 75: Button 7
+        """
         self.inputs.input_bit_register_64 = False
         self.inputs.input_bit_register_65 = False
         self.inputs.input_bit_register_66 = False
@@ -97,6 +99,11 @@ class RTDE_ed:
         """
         self.inputs.input_int_register_24 = 0
 
+        """
+            Initial watchdog value
+        """
+        self.watchdog.input_int_register_0 = 0
+
     def receive_data_from_robot(self):
         result = self.con.receive()
         return result.output_bit_register_64
@@ -104,20 +111,14 @@ class RTDE_ed:
     def bool_list_to_inputs(self, data, start=64):
         for i, value in enumerate(data[0:2]):
             if value > 0:
-                self.inputs.__dict__[
-                    f"input_bit_register_{start + i * 2}"] = True
-                self.inputs.__dict__[f"input_bit_register_{
-                    start + i * 2 + 1}"] = False
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2}"] = True
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2 + 1}"] = False
             elif value < 0:
-                self.inputs.__dict__[
-                    f"input_bit_register_{start + i * 2}"] = False
-                self.inputs.__dict__[
-                    f"input_bit_register_{start + i * 2 + 1}"] = True
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2}"] = False
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2 + 1}"] = True
             else:
-                self.inputs.__dict__[
-                    f"input_bit_register_{start + i * 2}"] = False
-                self.inputs.__dict__[f"input_bit_register_{
-                    start + i * 2 + 1}"] = False
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2}"] = False
+                self.inputs.__dict__[f"input_bit_register_{start + i * 2 + 1}"] = False
 
         # Bắt đầu lại từ thanh ghi 68
         start = 68
@@ -148,6 +149,8 @@ class RTDE_ed:
                     self.inputs.input_int_register_24 = data
                     break
         self.con.send(self.inputs)
+        self.watchdog.input_int_register_0 += 1
+        self.con.send(self.watchdog)
         return print("[INFO]: Data sent to robot completely")
 
     def reconnect(self):
