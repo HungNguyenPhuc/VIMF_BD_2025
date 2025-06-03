@@ -33,11 +33,16 @@ class GamepadVisualizer:
         self.joystick = None
         self.joystick_count = pygame.joystick.get_count()
         
-        if self.joystick_count > 0:
-            self.joystick = pygame.joystick.Joystick(0)
-            self.joystick.init()
-        
+        self.init_joystick()
         self.running = True
+    
+    def init_joystick(self):
+        """Initialize the first available joystick"""
+        if pygame.joystick.get_count() > 0:
+            self.joystick = pygame.joystick.Joystick(0)
+            # Don't call init() on newer pygame versions
+        else:
+            self.joystick = None
     
     def draw_button(self, x, y, radius, pressed, label):
         """Draw a circular button"""
@@ -159,18 +164,12 @@ class GamepadVisualizer:
             # Clear screen
             self.screen.fill(BLACK)
             
-            # Check for joystick connection changes
-            pygame.joystick.quit()
-            pygame.joystick.init()
+            # Check for joystick connection changes (less aggressive approach)
             joystick_count = pygame.joystick.get_count()
             
             if joystick_count != self.joystick_count:
                 self.joystick_count = joystick_count
-                if joystick_count > 0:
-                    self.joystick = pygame.joystick.Joystick(0)
-                    self.joystick.init()
-                else:
-                    self.joystick = None
+                self.init_joystick()
             
             # Draw title
             title = self.font.render("Gamepad Visualizer", True, WHITE)
@@ -191,66 +190,74 @@ class GamepadVisualizer:
                 name_text = self.small_font.render(f"Controller: {gamepad_name}", True, WHITE)
                 self.screen.blit(name_text, (10, 40))
                 
-                # Get joystick values
+                # Get joystick values safely
                 num_axes = self.joystick.get_numaxes()
                 num_buttons = self.joystick.get_numbuttons()
                 num_hats = self.joystick.get_numhats()
                 
                 # Left joystick (usually axes 0 and 1)
-                left_x = self.joystick.get_axis(0) if num_axes > 0 else 0
-                left_y = self.joystick.get_axis(1) if num_axes > 1 else 0
-                self.draw_joystick(150, 200, left_x, left_y, 50, "Left Stick")
-                
-                # Right joystick (usually axes 2 and 3, or 3 and 4)
-                right_x = self.joystick.get_axis(2) if num_axes > 2 else 0
-                right_y = self.joystick.get_axis(3) if num_axes > 3 else 0
-                self.draw_joystick(350, 200, right_x, right_y, 50, "Right Stick")
-                
-                # Triggers (usually axes 4 and 5, or 2 and 5)
-                left_trigger = 0
-                right_trigger = 0
-                if num_axes > 4:
-                    left_trigger = (self.joystick.get_axis(4) + 1) / 2  # Convert from -1,1 to 0,1
-                if num_axes > 5:
-                    right_trigger = (self.joystick.get_axis(5) + 1) / 2
-                
-                self.draw_trigger(500, 150, 30, 100, left_trigger, "LT")
-                self.draw_trigger(550, 150, 30, 100, right_trigger, "RT")
-                
-                # Face buttons (A, B, X, Y)
-                button_labels = ["A", "B", "X", "Y"]
-                button_positions = [(650, 220), (680, 190), (620, 190), (650, 160)]
-                
-                for i, (label, pos) in enumerate(zip(button_labels, button_positions)):
-                    pressed = self.joystick.get_button(i) if i < num_buttons else False
-                    self.draw_button(pos[0], pos[1], 15, pressed, label)
-                
-                # Shoulder buttons
-                lb_pressed = self.joystick.get_button(4) if num_buttons > 4 else False
-                rb_pressed = self.joystick.get_button(5) if num_buttons > 5 else False
-                self.draw_button(500, 100, 15, lb_pressed, "LB")
-                self.draw_button(550, 100, 15, rb_pressed, "RB")
-                
-                # D-pad
-                if num_hats > 0:
-                    hat = self.joystick.get_hat(0)
-                    up = hat[1] > 0
-                    down = hat[1] < 0
-                    left = hat[0] < 0
-                    right = hat[0] > 0
-                    self.draw_dpad(150, 350, up, down, left, right)
-                
-                # Additional buttons (Start, Select, etc.)
-                start_pressed = self.joystick.get_button(7) if num_buttons > 7 else False
-                select_pressed = self.joystick.get_button(6) if num_buttons > 6 else False
-                self.draw_button(300, 100, 12, start_pressed, "Start")
-                self.draw_button(250, 100, 12, select_pressed, "Select")
-                
-                # Stick buttons (L3, R3)
-                l3_pressed = self.joystick.get_button(8) if num_buttons > 8 else False
-                r3_pressed = self.joystick.get_button(9) if num_buttons > 9 else False
-                self.draw_button(150, 310, 10, l3_pressed, "L3")
-                self.draw_button(350, 310, 10, r3_pressed, "R3")
+                try:
+                    left_x = self.joystick.get_axis(0) if num_axes > 0 else 0
+                    left_y = self.joystick.get_axis(1) if num_axes > 1 else 0
+                    self.draw_joystick(150, 200, left_x, left_y, 50, "Left Stick")
+                    
+                    # Right joystick (usually axes 2 and 3, or 3 and 4)
+                    right_x = self.joystick.get_axis(2) if num_axes > 2 else 0
+                    right_y = self.joystick.get_axis(3) if num_axes > 3 else 0
+                    self.draw_joystick(350, 200, right_x, right_y, 50, "Right Stick")
+                    
+                    # Triggers (usually axes 4 and 5, or 2 and 5)
+                    left_trigger = 0
+                    right_trigger = 0
+                    if num_axes > 4:
+                        left_trigger = max(0, (self.joystick.get_axis(4) + 1) / 2)  # Convert from -1,1 to 0,1
+                    if num_axes > 5:
+                        right_trigger = max(0, (self.joystick.get_axis(5) + 1) / 2)
+                    
+                    self.draw_trigger(500, 150, 30, 100, left_trigger, "LT")
+                    self.draw_trigger(550, 150, 30, 100, right_trigger, "RT")
+                    
+                    # Face buttons (A, B, X, Y)
+                    button_labels = ["A", "B", "X", "Y"]
+                    button_positions = [(650, 220), (680, 190), (620, 190), (650, 160)]
+                    
+                    for i, (label, pos) in enumerate(zip(button_labels, button_positions)):
+                        pressed = self.joystick.get_button(i) if i < num_buttons else False
+                        self.draw_button(pos[0], pos[1], 15, pressed, label)
+                    
+                    # Shoulder buttons
+                    lb_pressed = self.joystick.get_button(4) if num_buttons > 4 else False
+                    rb_pressed = self.joystick.get_button(5) if num_buttons > 5 else False
+                    self.draw_button(500, 100, 15, lb_pressed, "LB")
+                    self.draw_button(550, 100, 15, rb_pressed, "RB")
+                    
+                    # D-pad
+                    if num_hats > 0:
+                        hat = self.joystick.get_hat(0)
+                        up = hat[1] > 0
+                        down = hat[1] < 0
+                        left = hat[0] < 0
+                        right = hat[0] > 0
+                        self.draw_dpad(150, 350, up, down, left, right)
+                    
+                    # Additional buttons (Start, Select, etc.)
+                    start_pressed = self.joystick.get_button(7) if num_buttons > 7 else False
+                    select_pressed = self.joystick.get_button(6) if num_buttons > 6 else False
+                    self.draw_button(300, 100, 12, start_pressed, "Start")
+                    self.draw_button(250, 100, 12, select_pressed, "Select")
+                    
+                    # Stick buttons (L3, R3)
+                    l3_pressed = self.joystick.get_button(8) if num_buttons > 8 else False
+                    r3_pressed = self.joystick.get_button(9) if num_buttons > 9 else False
+                    self.draw_button(150, 310, 10, l3_pressed, "L3")
+                    self.draw_button(350, 310, 10, r3_pressed, "R3")
+                    
+                except pygame.error as e:
+                    # Handle joystick disconnection gracefully
+                    error_text = self.font.render(f"Joystick error: {str(e)}", True, RED)
+                    text_rect = error_text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2))
+                    self.screen.blit(error_text, text_rect)
+                    self.joystick = None
             
             # Instructions
             instructions = [
