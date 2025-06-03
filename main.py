@@ -2,7 +2,6 @@ import pygame
 from time import sleep
 import exchange_data
 
-
 bool_data = []
 button_data = []
 hat_data = []
