@@ -1,19 +1,19 @@
 import pygame
 from time import sleep
-import exchange_data
 
 bool_data = []
 button_data = []
 hat_data = []
 double_data = []
 # rb = exchange_data.RTDE_ed(robot_ip="172.17.0.2")
-rb = exchange_data.RTDE_ed()
 # Khởi tạo pygame
 pygame.init()
 
 # Khởi tạo joystick
 pygame.joystick.init()
-
+while not pygame.joystick.get_init():
+    pygame.joystick.init()
+    sleep(0.5)
 # Kiểm tra số lượng joystick
 joystick_count = pygame.joystick.get_count()
 print(f"Số joystick tìm thấy: {joystick_count}")
@@ -45,7 +45,7 @@ try:
         print(double_data)
 
         # Đọc trạng thái nút bấm
-        for i in range(0, 12, 1):
+        for i in range(0, 10, 1):
             button = joystick.get_button(i)
             button_data.append(button)
         print("button list: ", button_data)
@@ -58,17 +58,12 @@ try:
         print("hat list: ", hat_data)
         bool_data = hat_data + button_data
         print("bool list: ", bool_data)
-        pygame.time.wait(10)
-        try:
-            rb.send_data_to_robot_joystick(bool_data, double_data)
-        except ConnectionResetError:
-            print("[ERROR]: Mất kết nối với robot. Đang reconnect ...")
-            rb.reconnect()
+        pygame.time.wait(100)
         bool_data = []
         hat_data = []
         button_data = []
         double_data = []
-        sleep(0.001)
+        sleep(0.01)
 
 except KeyboardInterrupt:
     print("\nThoát chương trình")

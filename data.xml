@@ -30,10 +30,11 @@
           - 69: Button 1 (Ry-up)  
           - 70: Button 2 (Ry-down)
           - 71: Button 3 (Rx-up)  
-          - 72: Button 4 (Z-up)   
-          - 73: Button 5 (Rz-up)  
-          - 74: Button 6 (Z-down) 
-          - 75: Button 7 (Rz-down)
+          - 72: Button 4 (none)   
+          - 73: Button 5 (none)  
+          - 74: Button 6 (Select) 
+          - 75: Button 7 (Start)
+          - 76: Run status
     -->
     <field name="input_bit_register_64" type="BOOL"/> 
 		<field name="input_bit_register_65" type="BOOL"/> 
@@ -47,6 +48,7 @@
     <field name="input_bit_register_73" type="BOOL"/> 
     <field name="input_bit_register_74" type="BOOL"/> 
     <field name="input_bit_register_75" type="BOOL"/> 
+    <field name="input_bit_register_76" type="BOOL"/>
     <!--
       Input value explain:
           - 0: Not detect

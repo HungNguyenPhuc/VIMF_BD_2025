@@ -6,8 +6,8 @@ import math
 pygame.init()
 
 # Constants
-WINDOW_WIDTH = 800
-WINDOW_HEIGHT = 600
+WINDOW_WIDTH = 900
+WINDOW_HEIGHT = 700
 FPS = 60
 
 # Colors
@@ -19,14 +19,17 @@ BLUE = (0, 0, 255)
 GRAY = (128, 128, 128)
 LIGHT_GRAY = (200, 200, 200)
 DARK_GRAY = (64, 64, 64)
+CONTROLLER_GRAY = (240, 240, 240)
+CONTROLLER_OUTLINE = (180, 180, 180)
 
 class GamepadVisualizer:
     def __init__(self):
         self.screen = pygame.display.set_mode((WINDOW_WIDTH, WINDOW_HEIGHT))
-        pygame.display.set_caption("Gamepad Visualizer")
+        pygame.display.set_caption("Xbox Controller Visualizer")
         self.clock = pygame.time.Clock()
         self.font = pygame.font.Font(None, 24)
         self.small_font = pygame.font.Font(None, 18)
+        self.large_font = pygame.font.Font(None, 32)
         
         # Initialize joystick
         pygame.joystick.init()
@@ -40,116 +43,183 @@ class GamepadVisualizer:
         """Initialize the first available joystick"""
         if pygame.joystick.get_count() > 0:
             self.joystick = pygame.joystick.Joystick(0)
-            # Don't call init() on newer pygame versions
         else:
             self.joystick = None
     
-    def draw_button(self, x, y, radius, pressed, label):
-        """Draw a circular button"""
-        color = GREEN if pressed else GRAY
-        pygame.draw.circle(self.screen, color, (int(x), int(y)), radius)
-        pygame.draw.circle(self.screen, WHITE, (int(x), int(y)), radius, 2)
+    def draw_controller_body(self):
+        """Draw the Xbox controller outline"""
+        center_x, center_y = WINDOW_WIDTH // 2, WINDOW_HEIGHT // 2 + 50
         
-        # Draw label
-        text = self.small_font.render(label, True, WHITE)
-        text_rect = text.get_rect(center=(x, y + radius + 15))
+        # Main body (rounded rectangle)
+        body_rect = pygame.Rect(center_x - 200, center_y - 80, 400, 160)
+        pygame.draw.rect(self.screen, CONTROLLER_GRAY, body_rect, border_radius=30)
+        pygame.draw.rect(self.screen, CONTROLLER_OUTLINE, body_rect, 3, border_radius=30)
+        
+        # Controller grips (handles)
+        # Left grip
+        left_grip = pygame.Rect(center_x - 250, center_y + 40, 80, 120)
+        pygame.draw.rect(self.screen, CONTROLLER_GRAY, left_grip, border_radius=40)
+        pygame.draw.rect(self.screen, CONTROLLER_OUTLINE, left_grip, 3, border_radius=40)
+        
+        # Right grip
+        right_grip = pygame.Rect(center_x + 170, center_y + 40, 80, 120)
+        pygame.draw.rect(self.screen, CONTROLLER_GRAY, right_grip, border_radius=40)
+        pygame.draw.rect(self.screen, CONTROLLER_OUTLINE, right_grip, 3, border_radius=40)
+        
+        return center_x, center_y
+    
+    def draw_trigger(self, x, y, width, height, value, label):
+        """Draw trigger as shoulder button"""
+        # Trigger body (rounded rectangle)
+        trigger_rect = pygame.Rect(x - width//2, y - height//2, width, height)
+        color = GREEN if value > 0.1 else GRAY
+        pygame.draw.rect(self.screen, color, trigger_rect, border_radius=8)
+        pygame.draw.rect(self.screen, WHITE, trigger_rect, 2, border_radius=8)
+        
+        # Label above trigger
+        text = self.small_font.render(label, True, BLACK)
+        text_rect = text.get_rect(center=(x, y - height//2 - 15))
+        self.screen.blit(text, text_rect)
+        
+        # Value below trigger
+        value_text = f"{value:.2f}"
+        value_surface = self.small_font.render(value_text, True, BLACK)
+        value_rect = value_surface.get_rect(center=(x, y + height//2 + 15))
+        self.screen.blit(value_surface, value_rect)
+    
+    def draw_shoulder_button(self, x, y, width, height, pressed, label):
+        """Draw shoulder button (LB/RB)"""
+        button_rect = pygame.Rect(x - width//2, y - height//2, width, height)
+        color = GREEN if pressed else GRAY
+        pygame.draw.rect(self.screen, color, button_rect, border_radius=6)
+        pygame.draw.rect(self.screen, WHITE, button_rect, 2, border_radius=6)
+        
+        # Label
+        text = self.small_font.render(label, True, WHITE if pressed else BLACK)
+        text_rect = text.get_rect(center=(x, y))
         self.screen.blit(text, text_rect)
     
-    def draw_joystick(self, center_x, center_y, x_axis, y_axis, radius, label):
-        """Draw joystick with current position"""
-        # Draw outer circle
-        pygame.draw.circle(self.screen, DARK_GRAY, (int(center_x), int(center_y)), radius)
-        pygame.draw.circle(self.screen, WHITE, (int(center_x), int(center_y)), radius, 2)
+    def draw_joystick(self, center_x, center_y, x_axis, y_axis, radius, label, pressed=False):
+        """Draw joystick with Xbox controller style"""
+        # Outer ring
+        pygame.draw.circle(self.screen, DARK_GRAY, (int(center_x), int(center_y)), radius + 5)
+        pygame.draw.circle(self.screen, WHITE, (int(center_x), int(center_y)), radius + 5, 2)
         
-        # Draw crosshairs
-        pygame.draw.line(self.screen, GRAY, 
+        # Inner area
+        pygame.draw.circle(self.screen, WHITE, (int(center_x), int(center_y)), radius)
+        pygame.draw.circle(self.screen, GRAY, (int(center_x), int(center_y)), radius, 1)
+        
+        # Crosshairs
+        pygame.draw.line(self.screen, LIGHT_GRAY, 
                         (center_x - radius, center_y), 
                         (center_x + radius, center_y), 1)
-        pygame.draw.line(self.screen, GRAY, 
+        pygame.draw.line(self.screen, LIGHT_GRAY, 
                         (center_x, center_y - radius), 
                         (center_x, center_y + radius), 1)
         
-        # Draw joystick position
-        stick_x = center_x + (x_axis * (radius - 10))
-        stick_y = center_y + (y_axis * (radius - 10))
-        pygame.draw.circle(self.screen, RED, (int(stick_x), int(stick_y)), 8)
+        # Joystick position
+        stick_x = center_x + (x_axis * (radius - 8))
+        stick_y = center_y + (y_axis * (radius - 8))
         
-        # Draw label
-        text = self.font.render(label, True, WHITE)
+        # Stick color changes when pressed
+        stick_color = RED if pressed else BLACK
+        pygame.draw.circle(self.screen, stick_color, (int(stick_x), int(stick_y)), 10)
+        pygame.draw.circle(self.screen, WHITE, (int(stick_x), int(stick_y)), 10, 2)
+        
+        # Label below joystick
+        text = self.small_font.render(label, True, BLACK)
         text_rect = text.get_rect(center=(center_x, center_y + radius + 25))
         self.screen.blit(text, text_rect)
-        
-        # Draw axis values
-        axis_text = f"X: {x_axis:.2f}, Y: {y_axis:.2f}"
-        axis_surface = self.small_font.render(axis_text, True, WHITE)
-        axis_rect = axis_surface.get_rect(center=(center_x, center_y + radius + 45))
-        self.screen.blit(axis_surface, axis_rect)
-    
-    def draw_trigger(self, x, y, width, height, value, label):
-        """Draw trigger as a progress bar"""
-        # Draw background
-        pygame.draw.rect(self.screen, DARK_GRAY, (x, y, width, height))
-        pygame.draw.rect(self.screen, WHITE, (x, y, width, height), 2)
-        
-        # Draw fill based on trigger value
-        if value > 0:
-            fill_height = int(height * value)
-            pygame.draw.rect(self.screen, GREEN, 
-                           (x, y + height - fill_height, width, fill_height))
-        
-        # Draw label
-        text = self.small_font.render(label, True, WHITE)
-        text_rect = text.get_rect(center=(x + width//2, y + height + 15))
-        self.screen.blit(text, text_rect)
-        
-        # Draw value
-        value_text = f"{value:.2f}"
-        value_surface = self.small_font.render(value_text, True, WHITE)
-        value_rect = value_surface.get_rect(center=(x + width//2, y + height + 30))
-        self.screen.blit(value_surface, value_rect)
     
     def draw_dpad(self, center_x, center_y, up, down, left, right):
-        """Draw D-pad"""
-        size = 20
-        gap = 5
+        """Draw D-pad with Xbox style"""
+        size = 15
+        thickness = 25
         
-        # Draw up
-        color = GREEN if up else GRAY
-        pygame.draw.rect(self.screen, color, 
-                        (center_x - size//2, center_y - size - gap, size, size))
-        pygame.draw.rect(self.screen, WHITE, 
-                        (center_x - size//2, center_y - size - gap, size, size), 2)
+        # Vertical bar
+        v_rect = pygame.Rect(center_x - size//2, center_y - thickness, size, thickness * 2)
+        pygame.draw.rect(self.screen, DARK_GRAY, v_rect, border_radius=3)
+        pygame.draw.rect(self.screen, WHITE, v_rect, 2, border_radius=3)
         
-        # Draw down
-        color = GREEN if down else GRAY
-        pygame.draw.rect(self.screen, color, 
-                        (center_x - size//2, center_y + gap, size, size))
-        pygame.draw.rect(self.screen, WHITE, 
-                        (center_x - size//2, center_y + gap, size, size), 2)
+        # Horizontal bar  
+        h_rect = pygame.Rect(center_x - thickness, center_y - size//2, thickness * 2, size)
+        pygame.draw.rect(self.screen, DARK_GRAY, h_rect, border_radius=3)
+        pygame.draw.rect(self.screen, WHITE, h_rect, 2, border_radius=3)
         
-        # Draw left
-        color = GREEN if left else GRAY
-        pygame.draw.rect(self.screen, color, 
-                        (center_x - size - gap, center_y - size//2, size, size))
-        pygame.draw.rect(self.screen, WHITE, 
-                        (center_x - size - gap, center_y - size//2, size, size), 2)
+        # Highlight pressed directions
+        if up:
+            up_rect = pygame.Rect(center_x - size//2, center_y - thickness, size, thickness//2)
+            pygame.draw.rect(self.screen, GREEN, up_rect, border_radius=3)
+        if down:
+            down_rect = pygame.Rect(center_x - size//2, center_y + thickness//2, size, thickness//2)
+            pygame.draw.rect(self.screen, GREEN, down_rect, border_radius=3)
+        if left:
+            left_rect = pygame.Rect(center_x - thickness, center_y - size//2, thickness//2, size)
+            pygame.draw.rect(self.screen, GREEN, left_rect, border_radius=3)
+        if right:
+            right_rect = pygame.Rect(center_x + thickness//2, center_y - size//2, thickness//2, size)
+            pygame.draw.rect(self.screen, GREEN, right_rect, border_radius=3)
+    
+    def draw_face_buttons(self, center_x, center_y, buttons):
+        """Draw ABXY buttons in Xbox layout"""
+        button_radius = 18
+        spacing = 35
         
-        # Draw right
-        color = GREEN if right else GRAY
-        pygame.draw.rect(self.screen, color, 
-                        (center_x + gap, center_y - size//2, size, size))
-        pygame.draw.rect(self.screen, WHITE, 
-                        (center_x + gap, center_y - size//2, size, size), 2)
+        # Button positions relative to center
+        positions = {
+            'Y': (center_x, center_y - spacing),      # Top
+            'X': (center_x - spacing, center_y),     # Left  
+            'B': (center_x + spacing, center_y),     # Right
+            'A': (center_x, center_y + spacing)      # Bottom
+        }
         
-        # Draw center
-        pygame.draw.rect(self.screen, DARK_GRAY, 
-                        (center_x - size//2, center_y - size//2, size, size))
-        pygame.draw.rect(self.screen, WHITE, 
-                        (center_x - size//2, center_y - size//2, size, size), 2)
+        colors = {
+            'Y': (255, 255, 0),   # Yellow
+            'X': (0, 150, 255),   # Blue
+            'B': (255, 50, 50),   # Red
+            'A': (50, 255, 50)    # Green
+        }
         
-        # Label
-        text = self.small_font.render("D-PAD", True, WHITE)
-        text_rect = text.get_rect(center=(center_x, center_y + 50))
+        for i, (button, pos) in enumerate(positions.items()):
+            pressed = buttons[i] if i < len(buttons) else False
+            color = colors[button] if pressed else GRAY
+            
+            pygame.draw.circle(self.screen, color, pos, button_radius)
+            pygame.draw.circle(self.screen, WHITE, pos, button_radius, 3)
+            
+            # Button letter
+            text_color = WHITE if pressed else BLACK
+            text = self.font.render(button, True, text_color)
+            text_rect = text.get_rect(center=pos)
+            self.screen.blit(text, text_rect)
+    
+    def draw_center_buttons(self, center_x, center_y, back_pressed, start_pressed, xbox_pressed):
+        """Draw center buttons (Back, Xbox, Start)"""
+        # Back button (left)
+        back_pos = (center_x - 40, center_y - 20)
+        color = GREEN if back_pressed else GRAY
+        pygame.draw.rect(self.screen, color, (back_pos[0] - 15, back_pos[1] - 8, 30, 16), border_radius=3)
+        pygame.draw.rect(self.screen, WHITE, (back_pos[0] - 15, back_pos[1] - 8, 30, 16), 2, border_radius=3)
+        text = self.small_font.render("⧉", True, WHITE if back_pressed else BLACK)
+        text_rect = text.get_rect(center=back_pos)
+        self.screen.blit(text, text_rect)
+        
+        # Xbox button (center)
+        xbox_pos = (center_x, center_y - 20)
+        color = GREEN if xbox_pressed else GRAY
+        pygame.draw.circle(self.screen, color, xbox_pos, 12)
+        pygame.draw.circle(self.screen, WHITE, xbox_pos, 12, 2)
+        text = self.small_font.render("⊞", True, WHITE if xbox_pressed else BLACK)
+        text_rect = text.get_rect(center=xbox_pos)
+        self.screen.blit(text, text_rect)
+        
+        # Start button (right)  
+        start_pos = (center_x + 40, center_y - 20)
+        color = GREEN if start_pressed else GRAY
+        pygame.draw.rect(self.screen, color, (start_pos[0] - 15, start_pos[1] - 8, 30, 16), border_radius=3)
+        pygame.draw.rect(self.screen, WHITE, (start_pos[0] - 15, start_pos[1] - 8, 30, 16), 2, border_radius=3)
+        text = self.small_font.render("≡", True, WHITE if start_pressed else BLACK)
+        text_rect = text.get_rect(center=start_pos)
         self.screen.blit(text, text_rect)
     
     def run(self):
@@ -162,115 +232,93 @@ class GamepadVisualizer:
                         self.running = False
             
             # Clear screen
-            self.screen.fill(BLACK)
+            self.screen.fill(WHITE)
             
-            # Check for joystick connection changes (less aggressive approach)
+            # Check for joystick connection changes
             joystick_count = pygame.joystick.get_count()
-            
             if joystick_count != self.joystick_count:
                 self.joystick_count = joystick_count
                 self.init_joystick()
             
             # Draw title
-            title = self.font.render("Gamepad Visualizer", True, WHITE)
-            self.screen.blit(title, (10, 10))
+            title = self.large_font.render("Xbox Controller Visualizer", True, BLACK)
+            title_rect = title.get_rect(center=(WINDOW_WIDTH//2, 40))
+            self.screen.blit(title, title_rect)
             
             if self.joystick is None:
                 # No gamepad connected
-                no_gamepad_text = self.font.render("No gamepad connected", True, RED)
+                no_gamepad_text = self.font.render("No controller connected", True, RED)
                 text_rect = no_gamepad_text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2))
                 self.screen.blit(no_gamepad_text, text_rect)
                 
-                instruction_text = self.small_font.render("Connect a gamepad and it will appear here", True, GRAY)
+                instruction_text = self.small_font.render("Connect an Xbox controller to see visualization", True, GRAY)
                 instruction_rect = instruction_text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2 + 30))
                 self.screen.blit(instruction_text, instruction_rect)
             else:
-                # Display gamepad info
+                # Draw controller body
+                center_x, center_y = self.draw_controller_body()
+                
+                # Display controller name
                 gamepad_name = self.joystick.get_name()
-                name_text = self.small_font.render(f"Controller: {gamepad_name}", True, WHITE)
-                self.screen.blit(name_text, (10, 40))
-                
-                # Get joystick values safely
-                num_axes = self.joystick.get_numaxes()
-                num_buttons = self.joystick.get_numbuttons()
-                num_hats = self.joystick.get_numhats()
-                
-                # Debug: Print axis mapping (remove this line after testing)
-                # if num_axes > 0:
-                #     print(f"Axes: {[round(self.joystick.get_axis(i), 3) for i in range(min(num_axes, 6))]}")
+                name_text = self.small_font.render(f"Controller: {gamepad_name}", True, BLACK)
+                name_rect = name_text.get_rect(center=(WINDOW_WIDTH//2, 80))
+                self.screen.blit(name_text, name_rect)
                 
                 try:
-                    # Xbox controller mapping:
-                    # Axis 0: Left stick X, Axis 1: Left stick Y
-                    # Axis 2: Left trigger, Axis 3: Right stick X
-                    # Axis 4: Right stick Y, Axis 5: Right trigger
+                    num_axes = self.joystick.get_numaxes()
+                    num_buttons = self.joystick.get_numbuttons()
+                    num_hats = self.joystick.get_numhats()
                     
+                    # Get all input values
                     left_x = self.joystick.get_axis(0) if num_axes > 0 else 0
                     left_y = self.joystick.get_axis(1) if num_axes > 1 else 0
-                    self.draw_joystick(150, 200, left_x, left_y, 50, "Left Stick")
+                    right_x = self.joystick.get_axis(3) if num_axes > 3 else 0
+                    right_y = self.joystick.get_axis(4) if num_axes > 4 else 0
                     
-                    # Right stick mapping - fix the axis assignment
-                    right_x = self.joystick.get_axis(3) if num_axes > 3 else 0  # Changed from axis 2 to 3
-                    right_y = self.joystick.get_axis(4) if num_axes > 4 else 0  # Changed from axis 3 to 4
-                    self.draw_joystick(350, 200, right_x, right_y, 50, "Right Stick")
+                    left_trigger = max(0, (self.joystick.get_axis(2) + 1) / 2) if num_axes > 2 else 0
+                    right_trigger = max(0, (self.joystick.get_axis(5) + 1) / 2) if num_axes > 5 else 0
                     
-                    # Triggers - correct mapping
-                    left_trigger = 0
-                    right_trigger = 0
-                    if num_axes > 2:
-                        left_trigger = max(0, (self.joystick.get_axis(2) + 1) / 2)  # Axis 2 is left trigger
-                    if num_axes > 5:
-                        right_trigger = max(0, (self.joystick.get_axis(5) + 1) / 2)  # Axis 5 is right trigger
+                    # Triggers (top)
+                    self.draw_trigger(center_x - 120, center_y - 120, 40, 20, left_trigger, "LT")
+                    self.draw_trigger(center_x + 120, center_y - 120, 40, 20, right_trigger, "RT")
                     
-                    self.draw_trigger(100, 100, 30, 80, left_trigger, "LT")
-                    self.draw_trigger(450, 100, 30, 80, right_trigger, "RT")
-                    
-                    # Face buttons - Xbox layout: A=0, B=1, X=2, Y=3
-                    # Rearrange to match physical layout
-                    face_buttons = [
-                        (0, "A", (650, 250)),  # Bottom
-                        (1, "B", (680, 220)),  # Right  
-                        (2, "X", (620, 220)),  # Left
-                        (3, "Y", (650, 190))   # Top
-                    ]
-                    
-                    for btn_id, label, pos in face_buttons:
-                        pressed = self.joystick.get_button(btn_id) if btn_id < num_buttons else False
-                        self.draw_button(pos[0], pos[1], 15, pressed, label)
-                    
-                    # Shoulder buttons - proper positioning
+                    # Shoulder buttons
                     lb_pressed = self.joystick.get_button(4) if num_buttons > 4 else False
                     rb_pressed = self.joystick.get_button(5) if num_buttons > 5 else False
-                    self.draw_button(150, 100, 15, lb_pressed, "LB")
-                    self.draw_button(350, 100, 15, rb_pressed, "RB")
+                    self.draw_shoulder_button(center_x - 120, center_y - 90, 50, 20, lb_pressed, "LB")
+                    self.draw_shoulder_button(center_x + 120, center_y - 90, 50, 20, rb_pressed, "RB")
                     
-                    # D-pad - move to left side to match controller layout
+                    # Left joystick
+                    l3_pressed = self.joystick.get_button(9) if num_buttons > 9 else False
+                    self.draw_joystick(center_x - 100, center_y + 20, left_x, left_y, 35, "Left Stick", l3_pressed)
+                    
+                    # Right joystick  
+                    r3_pressed = self.joystick.get_button(10) if num_buttons > 10 else False
+                    self.draw_joystick(center_x + 100, center_y + 20, right_x, right_y, 35, "Right Stick", r3_pressed)
+                    
+                    # D-pad (left side)
                     if num_hats > 0:
                         hat = self.joystick.get_hat(0)
                         up = hat[1] > 0
                         down = hat[1] < 0
                         left = hat[0] < 0
                         right = hat[0] > 0
-                        self.draw_dpad(80, 250, up, down, left, right)
+                        self.draw_dpad(center_x - 100, center_y - 25, up, down, left, right)
                     
-                    # System buttons - center positioned
-                    select_pressed = self.joystick.get_button(6) if num_buttons > 6 else False  # Back/Select
-                    start_pressed = self.joystick.get_button(7) if num_buttons > 7 else False   # Start/Menu
-                    home_pressed = self.joystick.get_button(8) if num_buttons > 8 else False    # Xbox/Home
+                    # Face buttons (right side)
+                    face_button_states = []
+                    for i in range(4):
+                        face_button_states.append(self.joystick.get_button(i) if i < num_buttons else False)
+                    self.draw_face_buttons(center_x + 100, center_y - 25, face_button_states)
                     
-                    self.draw_button(300, 120, 10, select_pressed, "Back")
-                    self.draw_button(400, 120, 10, start_pressed, "Start") 
-                    self.draw_button(350, 150, 8, home_pressed, "Home")
-                    
-                    # Stick buttons (L3, R3) - positioned on the sticks
-                    l3_pressed = self.joystick.get_button(9) if num_buttons > 9 else False
-                    r3_pressed = self.joystick.get_button(10) if num_buttons > 10 else False
-                    self.draw_button(150, 280, 8, l3_pressed, "L3")
-                    self.draw_button(350, 280, 8, r3_pressed, "R3")
+                    # Center buttons
+                    back_pressed = self.joystick.get_button(6) if num_buttons > 6 else False
+                    start_pressed = self.joystick.get_button(7) if num_buttons > 7 else False
+                    xbox_pressed = self.joystick.get_button(8) if num_buttons > 8 else False
+                    self.draw_center_buttons(center_x, center_y, back_pressed, start_pressed, xbox_pressed)
                     
                 except pygame.error as e:
-                    # Handle joystick disconnection gracefully
-                    error_text = self.font.render(f"Joystick error: {str(e)}", True, RED)
+                    error_text = self.font.render(f"Controller error: {str(e)}", True, RED)
                     text_rect = error_text.get_rect(center=(WINDOW_WIDTH//2, WINDOW_HEIGHT//2))
                     self.screen.blit(error_text, text_rect)
                     self.joystick = None
@@ -278,7 +326,7 @@ class GamepadVisualizer:
             # Instructions
             instructions = [
                 "ESC - Exit",
-                "Connect/disconnect gamepads as needed"
+                "Connect Xbox controller for real-time visualization"
             ]
             
             for i, instruction in enumerate(instructions):

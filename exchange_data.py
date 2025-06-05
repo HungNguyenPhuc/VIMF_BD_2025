@@ -4,13 +4,13 @@ from time import sleep
 
 
 class RTDE_ed:
-    def __init__(self, robot_ip="192.168.1.100", robot_port=30004):
+    def __init__(self, robot_ip="192.168.1.100", robot_port=30004,config_file_path="data.xml",frequency=500):
         print("-------------------------------")
         print("[LOG]: Initial RTDE parameters")
 
         ROBOT_HOST = robot_ip
         ROBOT_PORT = robot_port
-        config_filename = "data.xml"
+        config_filename = config_file_path
 
         # Get data
         conf = rtde_config.ConfigFile(config_filename)
@@ -38,7 +38,8 @@ class RTDE_ed:
             print("[Error]: Cannot synchronize data. Try to reconnect in 3s")
             sleep(3)
             self.reconnect()
-
+        # Frequency send data
+        self.con.send_output_setup(frequency=frequency)
     def init_rtde_parameters(self):
         """
         Button:
@@ -67,6 +68,7 @@ class RTDE_ed:
         self.inputs.input_bit_register_73 = False
         self.inputs.input_bit_register_74 = False
         self.inputs.input_bit_register_75 = False
+        self.inputs.input_bit_register_76 = False
 
         """
            Analog:
