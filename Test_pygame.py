@@ -58,6 +58,8 @@ try:
         print("hat list: ", hat_data)
         bool_data = hat_data + button_data
         print("bool list: ", bool_data)
+        if bool_data[0]==1:
+            joystick.rumble(0,0.7,0)
         pygame.time.wait(100)
         bool_data = []
         hat_data = []

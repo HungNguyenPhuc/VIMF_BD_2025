@@ -39,7 +39,7 @@ class RTDE_ed:
             sleep(3)
             self.reconnect()
         # Frequency send data
-        self.con.send_output_setup(frequency=frequency)
+        #self.con.send_output_setup(frequency=frequency)
     def init_rtde_parameters(self):
         """
         Button:
